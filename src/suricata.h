@@ -103,6 +103,7 @@ enum EngineMode {
     ENGINE_MODE_IPS,
 };
 
+/* 初始化引擎模式为IDS模式。IDS模式旁路部署，不会阻断数据传输。而IPS会先将数据收下，进行分析后，再传给后续设备或程序处理。 */
 void EngineModeSetIPS(void);
 void EngineModeSetIDS(void);
 int EngineModeIsIPS(void);
@@ -119,6 +120,7 @@ enum {
 
 #include "runmodes.h"
 
+/* 为了更好的封装性（不使用一堆零散的参数或全局变量），采用SCInstance结构体变量统一保存程序当前的一些状态、标志等上下文环境，通常用作参数传递给各模块的子函数。*/
 typedef struct SCInstance_ {
     enum RunModes run_mode;
     enum RunModes aux_run_mode;

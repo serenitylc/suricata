@@ -116,6 +116,7 @@ void ConfInit(void)
         SCLogDebug("already initialized");
         return;
     }
+    // root是ConfNode类型的全局指针，将指向yaml配置文件的根节点
     root = ConfNodeNew();
     if (root == NULL) {
             FatalError(SC_ERR_FATAL,
@@ -134,10 +135,12 @@ ConfNode *ConfNodeNew(void)
 {
     ConfNode *new;
 
+    // 申请ConfNode大小的内存
     new = SCCalloc(1, sizeof(*new));
     if (unlikely(new == NULL)) {
         return NULL;
     }
+    // 将new的head置为NULL
     TAILQ_INIT(&new->head);
 
     return new;

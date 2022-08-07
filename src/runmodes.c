@@ -236,16 +236,16 @@ void RunModeRegisterRunModes(void)
 {
     memset(runmodes, 0, sizeof(runmodes));
 
-    RunModeIdsPcapRegister();
-    RunModeFilePcapRegister();
+    RunModeIdsPcapRegister();       // Pcap模式注册
+    RunModeFilePcapRegister();      // PcapFile模式注册，用于直接读取、解析pcap文件
     RunModeIdsPfringRegister();
     RunModeIpsNFQRegister();
     RunModeIpsIPFWRegister();
     RunModeErfFileRegister();
     RunModeErfDagRegister();
-    RunModeNapatechRegister();
+    RunModeNapatechRegister();      // Napatech模式注册，解析Napatech网卡抓到的包
     RunModeIdsAFPRegister();
-    RunModeIdsNetmapRegister();
+    RunModeIdsNetmapRegister();     // Netmap模式注册，解析通过Netmap抓到的包
     RunModeIdsNflogRegister();
     RunModeUnixSocketRegister();
     RunModeIpsWinDivertRegister();

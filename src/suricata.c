@@ -222,6 +222,7 @@ intmax_t max_pending_packets;
 int g_detect_disabled = 0;
 
 /** set caps or not */
+/* 初始化sc_set_caps为FALSE –> 标识是否对主线程进行特权去除（drop privilege），主要是出于安全性考虑。*/
 int sc_set_caps = FALSE;
 
 /** highest mtu of the interfaces we monitor */
@@ -377,9 +378,12 @@ static void SignalHandlerSigHup(/*@unused@*/ int sig)
 
 void GlobalsInitPreConfig(void)
 {
+    // 初始化时间。包括：获取当前时间所用的spin lock，以及设置时区（调用tzset()即可）
     TimeInit();
+    // 为快速模式匹配注册关键字。调用SupportFastPatternForSigMatchList函数，按照优先级大小插入到sm_fp_support_smlist_list链表
     SupportFastPatternForSigMatchTypes();
     SCThresholdConfGlobalInit();
+    // 读取/etc/protocols文件，建立IP层所承载的上层协议号和协议名的映射（如6-> ”TCP”,17-> ”UDP“）
     SCProtoNameInit();
 }
 
@@ -2151,6 +2155,7 @@ static int InitSignalHandler(SCInstance *suri)
 void PreRunInit(const int runmode)
 {
     HttpRangeContainersInit();
+    // 若运行模式不为RUNMODE_UNIX_SOCKET调用StatsInit()初始化全局变量stats_ctx
     if (runmode == RUNMODE_UNIX_SOCKET)
         return;
 
@@ -2162,6 +2167,7 @@ void PreRunInit(const int runmode)
     SCProfilingSghsGlobalInit();
     SCProfilingInit();
 #endif /* PROFILING */
+    // 初始化IP分片重组模块
     DefragInit();
     FlowInitConfig(FLOW_QUIET);
     IPPairInitConfig(FLOW_QUIET);
@@ -2534,6 +2540,8 @@ static void PostConfLoadedSetupHostMode(void)
 {
     const char *hostmode = NULL;
 
+    /* 设置host_mode（主机模式），两种模式：router和sniffer-only，
+    如果设置为“auto”，则会进行自动选择：IPS模式下运行为router，否则为sniffer-only。*/
     if (ConfGet("host-mode", &hostmode) == 1) {
         if (!strcmp(hostmode, "router")) {
             host_mode = SURI_HOST_IS_ROUTER;
@@ -2595,7 +2603,12 @@ int PostConfLoadedSetup(SCInstance *suri)
 #endif
 
     /* load the pattern matchers */
+    /* MpmTableSetup：设置多模式匹配表，该表中每一项就是一个实现了某种多模式匹配算法（如WuManber、AC）的匹配器。 
+    以注册AC匹配器为例，MpmTableSetup会调用MpmACRegister函数实现AC注册，
+    函数内部其实只是填充mpm_table中对应AC的那一项（mpm_table[MPM_AC]）的各个字段，
+    如：匹配器名称（”ac”）、初始化函数（SCACInitCtx）、增加模式函数（SCACAddPatternCS）、实际的搜索执行函数（SCACSearch） */
     MpmTableSetup();
+    // 设置单模式匹配表，基本和上面的多模式匹配相同，有两个匹配项BM和HS（HYPERSCAN）
     SpmTableSetup();
 
     int disable_offloading;
@@ -2617,6 +2630,7 @@ int PostConfLoadedSetup(SCInstance *suri)
             }
         }
     }
+    // 设置checksum是否生效
     switch (suri->checksum_validation) {
         case 0:
             ConfSet("stream.checksum-validation", "0");
@@ -2630,6 +2644,7 @@ int PostConfLoadedSetup(SCInstance *suri)
         ConfSet("runmode", suri->runmode_custom_mode);
     }
 
+    // 初始化存储模块，这个模块可以用来临时存储一些数据，数据类型目前有两种：host、flow。
     StorageInit();
 #ifdef HAVE_PACKET_EBPF
     if (suri->run_mode == RUNMODE_AFP_DEV) {
@@ -2641,6 +2656,11 @@ int PostConfLoadedSetup(SCInstance *suri)
 
     MacSetRegisterFlowStorage();
 
+    /* 应用层协议设置。
+    其中，AppLayerProtoDetectSetup函数初始化该模块所用到的多模式匹配器；
+    AppLayerParserSetup函数通过传输层和应用层协议号构建了一个二维数组，并在该数组中为相应的流重组深度赋值；
+    AppLayerParserRegisterProtocolParsers函数注册各种应用层协议的解析器（如RegisterHTPParsers函数对应HTTP协议）；
+    AppLayerProtoDetectPrepareState函数的功能暂时也没弄明白。*/
     AppLayerSetup();
 
     /* Suricata will use this umask if provided. By default it will use the
@@ -2653,7 +2673,7 @@ int PostConfLoadedSetup(SCInstance *suri)
         }
     }
 
-
+    // 获取与包捕获相关的一些配置参数，目前包括：max-pending-packets、default-packet-size。
     if (ConfigGetCaptureValue(suri) != TM_ECODE_OK) {
         SCReturnInt(TM_ECODE_FAILED);
     }
@@ -2664,6 +2684,8 @@ int PostConfLoadedSetup(SCInstance *suri)
 #endif
 
     /* Load the Host-OS lookup. */
+    /* 从配置文件中载入host os policy(主机OS策略)信息。
+    网络入侵通常是针对某些特定OS的漏洞，因此如果能够获取部署环境中主机的OS信息，肯定对入侵检测大有裨益。具体这些信息是怎么使用的，暂时也还不清楚。*/
     SCHInfoLoadFromConfig();
 
     if (suri->run_mode == RUNMODE_ENGINE_ANALYSIS) {
@@ -2678,16 +2700,22 @@ int PostConfLoadedSetup(SCInstance *suri)
     }
 
     /* hardcoded initialization code */
+    // 初始化检测引擎，主要是注册检测引擎所支持的规则格式（跟Snort规则基本一致）中的关键字，比如sid、priority、msg、within、distance等等。
     SigTableSetup(); /* load the rule keywords */
     SigTableApplyStrictCommandlineOption(suri->strict_rule_parsing_string);
+    /* 初始化queue handler（队列处理函数），这个是衔接线程模块和数据包队列之间的桥梁，目前共有5类handler：simple、nfq、packetpool、flow、ringbuffer
+    每类handler内部都有一个InHandler和OutHandler，一个用于从上一级队列中获取数据包，另一个用于处理完毕后将数据包送入下一级队列。*/
     TmqhSetup();
 
+    /* TagInitCtx、ThresholdInit：与规则中的tag、threshould关键字的实现相关，
+    这里用到了Storage模块，调用 HostStorageRegister和FlowStorageRegister注册了几个（与流/主机绑定的？）存储区域。*/
     TagInitCtx();
     PacketAlertTagInit();
     ThresholdInit();
     HostBitInitCtx();
     IPPairBitInitCtx();
 
+    // 检查配置文件中”vars”选项下所预定义的一些IP地址（如局域网地址块）、端口变量（如HTTP端口号）是否符合格式要求。
     if (DetectAddressTestConfVars() < 0) {
         SCLogError(SC_ERR_INVALID_YAML_CONF_ENTRY,
                 "basic address vars test failed. Please check %s for errors",
@@ -2702,26 +2730,43 @@ int PostConfLoadedSetup(SCInstance *suri)
     }
 
     FeatureTrackingRegister(); /* must occur prior to output mod registration */
+    /* 这是个非常重要的函数！里面注册了Suricata所支持的所有线程模块（Thread Module）。
+    以pcap相关模块为例，TmModuleReceivePcapRegister函数注册了Pcap捕获模块，
+    而TmModuleDecodePcapRegister函数注册了Pcap数据包解码模块。
+    所谓注册，就是在tmm_modules模块数组中对应的那项中填充TmModule结构的所有字段，
+    这些字段包括：模块名字、线程初始化函数、包处理或包获取函数、线程退出清理函数、一些标志位等等。*/
     RegisterAllModules();
 #ifdef HAVE_PLUGINS
     SCPluginsLoad(suri->capture_plugin_name, suri->capture_plugin_args);
 #endif
+    // 设置suricata内部模块与libhtp（HTTP处理库）对接关系的函数，具体细节暂时不管。
     AppLayerHtpNeedFileInspection();
 
     StorageFinalize();
 
     TmModuleRunInit();
 
+    /* 检查是否进入Daemon模式。
+    若需要进入Daemon模式，则会检测pidfile是否已经存在（daemon下只 能有一个实例运行），然后进行Daemonize，最后创建一个pidfile。
+    Daemonize的主要思路是：fork->子进程调用 setsid创建一个新的session，关闭stdin、stdout、stderr，
+    并告诉父进程 –> 父进程等待子进程通知，然后退出 –> 子进程继续执行。*/
     if (MayDaemonize(suri) != TM_ECODE_OK)
         SCReturnInt(TM_ECODE_FAILED);
 
+    /* 初始化信号handler。
+    首先为SIGINT（ctrl-c触发）和SIGTERM（不带参数kill时触发）这两个常规退出信号分别注册handler，
+    对SIGINT的处理是设置程序的状态标志为STOP，即让程序优雅地退出；而对SIGTERM是设置为KILL，即强杀。
+    接着，程序会忽略SIGPIPE（这个信号通常是在Socket通信时向已关闭的连接另一端发送数据时收到）
+    和SIGSYS（当进程尝试执行一个不存在的系统调用时收到）信号，以加强程序的容错性和健壮性。*/
     if (InitSignalHandler(suri) != TM_ECODE_OK)
         SCReturnInt(TM_ECODE_FAILED);
 
     /* Check for the existance of the default logging directory which we pick
      * from suricata.yaml.  If not found, shut the engine down */
+    // 设置并验证日志存储目录是否存在。若配置文件中未指定，则使用默认目录，linux下默认为/var/log/suricata。
     suri->log_dir = ConfigGetLogDirectory();
 
+    // 判断所指目录是否存在，若不存在则退出程序。
     if (ConfigCheckLogDirectoryExists(suri->log_dir) != TM_ECODE_OK) {
         SCLogError(SC_ERR_LOGDIR_CONFIG, "The logging directory \"%s\" "
                 "supplied by %s (default-log-dir) doesn't exist. "
@@ -2735,14 +2780,17 @@ int PostConfLoadedSetup(SCInstance *suri)
         SCReturnInt(TM_ECODE_FAILED);
     }
 
+    // 若detect未开启，则设置tcp流重组为false。
     if (suri->disabled_detect) {
         SCLogConfig("detection engine disabled");
         /* disable raw reassembly */
         (void)ConfSetFinal("stream.reassembly.raw", "false");
     }
 
+    // 初始化Host engine。这货好像跟之前的host类型的storage有关系。具体到配置文件中只有3项：hash-size, prealloc, memcap。
     HostInitConfig(HOST_VERBOSE);
 
+    // 处理CoreDump相关配置。Linux下可用prctl函数获取和设置进程dumpable状态，设置corefile大小则是通过通用的setrlimit函数。
     CoredumpLoadConfig();
 
     DecodeGlobalConfig();
@@ -2807,11 +2855,14 @@ static void SuricataMainLoop(SCInstance *suri)
 int InitGlobal(void) {
     rs_init(&suricata_context);
 
+    /* 初始化原子变量engine_stage –> 记录程序当前的运行阶段：SURICATA_INIT、SURICATA_RUNTIME、SURICATA_FINALIZE */
     SC_ATOMIC_INIT(engine_stage);
 
     /* initialize the logging subsys */
+    /* 初始化日志模块，因为后续执行流程将使用日志输出，所以需要最先初始化该模块。 */
     SCLogInitLogModule(NULL);
 
+    /* 设置主程序名为“Suricata-Main”，SCSetThreadName是预定义的宏。*/
     SCSetThreadName("Suricata-Main");
 
     /* Ignore SIGUSR2 as early as possble. We redeclare interest
@@ -2826,7 +2877,11 @@ int InitGlobal(void) {
     }
 #endif
 
+    /* 初始化ParserSize模块 –> 使用正则表达式来解析类似“10Mb”这种大小参数。
+    其中正则引擎用的是pcre，因此初始化就是调用pcre_compile、pcre_study对已经写好的正则表达式进行编译和预处理。
+    */
     ParseSizeInit();
+    /* 完成运行模式注册，我们添加的所有运行模式都要通过这个函数注册。 */
     RunModeRegisterRunModes();
 
     /* Initialize the configuration module. */
@@ -2837,6 +2892,11 @@ int InitGlobal(void) {
 
 int SuricataMain(int argc, char **argv)
 {
+    /* 显示初始化suricata中各字段。
+    虽然memset清零也能达到基本目的，但显示地将各成员设成0/NULL/FALSE能增强可读性和扩展性。
+    若后续初始化需要设置一些非0值（如用-1表示无效值），就可直接修改。 
+    argv[0] 可执行程序名称
+    */
     SCInstanceInit(&suricata, argv[0]);
 
     if (InitGlobal() != 0) {
@@ -2850,14 +2910,22 @@ int SuricataMain(int argc, char **argv)
     }
 #endif /* OS_WIN32 */
 
+    /* 解析命令行参数，为suricata结构的成员赋值。
+    其中，与包捕获相关的选项（如“-i”）会调用LiveRegisterDevice，以注册一个数据包捕获设备接口（如eth0）。
+    全局的所有已注册的设备接口存储在变量live_devices中，类型为LiveDevice。
+    注意，用多设备同时捕获数据包这个特性在Suricata中目前还只是实验性的。“-v”选项可多次使用，每个v都能将当前日志等级提升一级。
+    */
     if (ParseCommandLine(argc, argv, &suricata) != TM_ECODE_OK) {
         exit(EXIT_FAILURE);
     }
 
+    /* 根据运行模式完成相应设置。
+    其中PCAP_FILE、ERF_FILE、ENGINE_ANALYSIS，不会通过网络抓包，所以将suri->offline置1。
+    设置全局的run_mode变量。另外还对 daemon模式做了记log的相关操作。*/
     if (FinalizeRunMode(&suricata, argv) != TM_ECODE_OK) {
         exit(EXIT_FAILURE);
     }
-
+    // 若运行模式为内部模式，则进入该模式执行，完毕后退出程序。
     switch (StartInternalRunMode(&suricata, argc, argv)) {
         case TM_ECODE_DONE:
             exit(EXIT_SUCCESS);
@@ -2869,10 +2937,15 @@ int SuricataMain(int argc, char **argv)
     GlobalsInitPreConfig();
 
     /* Load yaml configuration file if provided. */
+    /* 调用LoadYamlConfig读取Yaml格式配置文件。若用户未在输入参数中指定配置文件，则使用默认配置文件（/etc/suricata/suricata.yaml）。
+    Yaml格式解析是通过libyaml库来完成的，解析的结果存储在配置节点树（见conf.c）中。
+    对include机制的支持：在第一遍调用ConfYamlLoadFile载入主配置文件后，将在当前配置节点树中搜寻“include”节点，
+    并对其每个子节点的值（即通过include语句所指定的子配置文件路径），同样调用ConfYamlLoadFile进行载入。 */
     if (LoadYamlConfig(&suricata) != TM_ECODE_OK) {
         exit(EXIT_FAILURE);
     }
 
+    // 若运行模式为DUMP_CONFIG，则调用ConfDump打印出当前的所有配置信息。ConfDump通过递归调用ConfNodeDump函数实现对配置节点树的DFS（深度优先遍历）
     if (suricata.run_mode == RUNMODE_DUMP_CONFIG) {
         ConfDump();
         exit(EXIT_SUCCESS);
@@ -2890,15 +2963,22 @@ int SuricataMain(int argc, char **argv)
 
     /* Since our config is now loaded we can finish configurating the
      * logging module. */
+    // 再次初始化日志模块。这次，程序将会根据配置文件中日志输出配置（logging.outputs）填充SCLogInitData类型的结构体，调用SCLogInitLogModule重新初始化日志模块。
     SCLogLoadConfig(suricata.daemon, suricata.verbose, suricata.userid, suricata.groupid);
 
+    // 打印版本信息。这是Suricata启动开始后第一条打印信息
     LogVersion(&suricata);
+    // 打印当前机器的CPU/核个数，信息通过sysconf系统函数获取
     UtilCpuPrintSummary();
 
+    /* 解析接口设置名称（网络设备，如eth0,eth1等）。
+    如果suri.pcap_dev为NULL，则从配置文件获取设备名称。
+    如果suri.pcap_dev不为NULL，则将读入的配置结点的设备名称改为suri.pcap_dev。*/
     if (ParseInterfacesList(suricata.aux_run_mode, suricata.pcap_dev) != TM_ECODE_OK) {
         exit(EXIT_FAILURE);
     }
 
+    // 执行PostConfLoadedSetup，即运行那些需要在配置载入完成后就立马执行的函数。这里面涉及的流程和函数非常多
     if (PostConfLoadedSetup(&suricata) != TM_ECODE_OK) {
         exit(EXIT_FAILURE);
     }

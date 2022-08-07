@@ -1297,6 +1297,7 @@ void SCLogInitLogModule(SCLogInitData *sc_lid)
 {
     /* De-initialize the logging context, if it has already init by the
      * environment variables at the start of the engine */
+    /* 清除之前的LogModule */
     SCLogDeInitLogModule();
 
 #if defined (OS_WIN32)
@@ -1306,12 +1307,14 @@ void SCLogInitLogModule(SCLogInitData *sc_lid)
 #endif /* OS_WIN32 */
 
     /* sc_log_config is a global variable */
+    /* 为SCLogConfig类型申请内存空间，sc_log_config是全局变量 */
     if ( (sc_log_config = SCMalloc(sizeof(SCLogConfig))) == NULL) {
         FatalError(SC_ERR_FATAL,
                    "Fatal error encountered in SCLogInitLogModule. Exiting...");
     }
     memset(sc_log_config, 0, sizeof(SCLogConfig));
 
+    /* 初始化一些重要指标，现在sc_lid为NULL，所以全部为默认值 */
     SCLogSetLogLevel(sc_lid, sc_log_config);
     SCLogSetLogFormat(sc_lid, sc_log_config);
     SCLogSetOPIface(sc_lid, sc_log_config);
