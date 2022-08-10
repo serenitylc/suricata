@@ -23,6 +23,9 @@
 #ifndef __RUNMODES_H__
 #define __RUNMODES_H__
 
+/* Suricata有多种运行模式，这些模式与抓包驱动和IDS/IPS选择相关联。
+抓包驱动如:pcap, pcap file, nfqueue, ipfw, dpdk或者一个特有的抓包驱动等。
+在启动时只能选择某个运行模式。如-i表示pcap，-r表示pcapfile，-q表示nfqueue等。*/
 /* Run mode */
 enum RunModes {
     RUNMODE_UNKNOWN = 0,
@@ -49,7 +52,7 @@ enum RunModes {
     RUNMODE_PRINT_VERSION,
     RUNMODE_PRINT_BUILDINFO,
     RUNMODE_PRINT_USAGE,
-    RUNMODE_DUMP_CONFIG,
+    RUNMODE_DUMP_CONFIG, /* 把从配置文件中加载的配置转储到终端并退出 */
     RUNMODE_CONF_TEST,
     RUNMODE_LIST_UNITTEST,
     RUNMODE_ENGINE_ANALYSIS,

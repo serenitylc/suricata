@@ -38,6 +38,7 @@ typedef struct PacketQueueNoLock_ {
 #endif /* DBG_PERF */
 } PacketQueueNoLock;
 
+// suricata数据包队列
 /** \brief simple fifo queue for packets with mutex and cond
  *  Calling the mutex or triggering the cond is responsibility of the caller
  *

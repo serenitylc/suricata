@@ -87,6 +87,7 @@ const char *thread_name_detect_loader = "DL";
 const char *thread_name_counter_stats = "CS";
 const char *thread_name_counter_wakeup = "CW";
 
+// 运行模式相关数据结构
 /**
  * \brief Holds description for a runmode.
  */
@@ -229,6 +230,7 @@ const char *RunModeGetMainMode(void)
     return RunModeTranslateModeToName(mainmode);
 }
 
+// 运行模式注册
 /**
  * \brief Register all runmodes in the engine.
  */
@@ -447,7 +449,7 @@ int RunModeNeedsBypassManager(void)
 }
 
 
-
+// 主要注册函数
 /**
  * \brief Registers a new runmode.
  *
