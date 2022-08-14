@@ -1177,6 +1177,15 @@
                     "items": {
                         "type": "string"
                     }
+                },
+               "has_ipv6_url": {
+                    "type": "boolean"
+                },
+               "has_ipv4_url": {
+                    "type": "boolean"
+                },
+               "has_exe_url": {
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false
@@ -1905,6 +1914,12 @@
                 },
                 "sname": {
                     "type": "string"
+                },
+                "ticket_encryption": {
+                    "type": "string"
+                },
+                "ticket_weak_encryption": {
+                    "type": "boolean"
                 },
                 "weak_encryption": {
                     "type": "boolean"
