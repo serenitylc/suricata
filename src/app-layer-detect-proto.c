@@ -180,6 +180,7 @@ struct AppLayerProtoDetectThreadCtx_ {
 };
 
 /* The global app layer proto detection context. */
+// 注册应用协议检测器
 static AppLayerProtoDetectCtx alpd_ctx;
 static AppLayerProtoDetectAliases *alpda_ctx = NULL;
 

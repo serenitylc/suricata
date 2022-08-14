@@ -138,6 +138,7 @@ static int SidTestParse04(void)
 /**
  * \brief Register DetectSid unit tests.
  */
+// 规则字符串的解析并追加到引擎
 static void DetectSidRegisterTests(void)
 {
     UtRegisterTest("SidTestParse01", SidTestParse01);

@@ -888,6 +888,7 @@ int AppLayerHandleUdp(ThreadVars *tv, AppLayerThreadCtx *tctx, Packet *p, Flow *
             }
 
             PACKET_PROFILING_APP_START(tctx, f->alproto);
+            // 处理应用层协议
             r = AppLayerParserParse(tv, tctx->alp_tctx, f, f->alproto,
                                     flags, p->payload, p->payload_len);
             PACKET_PROFILING_APP_END(tctx, f->alproto);

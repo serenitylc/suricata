@@ -95,6 +95,7 @@ struct AppLayerParserThreadCtx_ {
 typedef struct AppLayerParserProtoCtx_
 {
     /* 0 - to_server, 1 - to_client. */
+    // 函数指针AppLayerParserFPtr对应协议的解析函数
     AppLayerParserFPtr Parser[2];
 
     bool logger;
@@ -149,6 +150,7 @@ typedef struct AppLayerParserProtoCtx_
 #endif
 } AppLayerParserProtoCtx;
 
+// 保存应用层协议 --> 二维数组，横坐标是三层协议，纵坐标是应用层协议。
 typedef struct AppLayerParserCtx_ {
     AppLayerParserProtoCtx ctxs[FLOW_PROTO_MAX][ALPROTO_MAX];
 } AppLayerParserCtx;
@@ -402,7 +404,7 @@ int AppLayerParserConfParserEnabled(const char *ipproto,
 }
 
 /***** Parser related registration *****/
-
+// 注册应用层协议函数，给 AppLayerParserFPtr Parser[2] 赋值协议处理函数
 int AppLayerParserRegisterParser(uint8_t ipproto, AppProto alproto,
                       uint8_t direction,
                       AppLayerParserFPtr Parser)
@@ -1325,6 +1327,7 @@ int AppLayerParserParse(ThreadVars *tv, AppLayerParserThreadCtx *alp_tctx, Flow 
         }
 #endif
         /* invoke the parser */
+        // 根据应用层协议号调用AppLayerParserProtoCtx中注册的应用层协议函数
         AppLayerResult res = p->Parser[direction](f, alstate, pstate, stream_slice,
                 alp_tctx->alproto_local_storage[f->protomap][alproto]);
         if (res.status < 0) {
@@ -1657,6 +1660,7 @@ static void ValidateParsers(void)
     }
 }
 
+// 注册应用层协议解析器--注册各种协议的回调函数，分配相应内存并保存在全局{static AppLayerParserCtx alp_ctx}中
 void AppLayerParserRegisterProtocolParsers(void)
 {
     SCEnter();

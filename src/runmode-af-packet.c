@@ -857,6 +857,7 @@ int RunModeIdsAFPSingle(void)
  * Start N threads with each thread doing all the work.
  *
  */
+// 创建相应的工作线程，同时工作线程处理流程（ReceiveAFP --> DecodeAFP --> FlowWorker --> RespondReject）
 int RunModeIdsAFPWorkers(void)
 {
     SCEnter();

@@ -380,10 +380,13 @@ static inline void FlowWorkerStreamTCPUpdate(ThreadVars *tv, FlowWorkerThreadDat
         void *detect_thread, const bool timeout)
 {
     FLOWWORKER_PROFILING_START(p, PROFILE_FLOWWORKER_STREAM);
+    // 实现流重组、协议识别和报文结构解析，实际工作主要由 StreamTcpPacket 完成
     StreamTcp(tv, p, fw->stream_thread, &fw->pq);
     FLOWWORKER_PROFILING_END(p, PROFILE_FLOWWORKER_STREAM);
 
+    // 检查是否为流设置了改变proto的标志
     if (FlowChangeProto(p->flow)) {
+        // 在两个方向上创建数据包，以便在切换协议前刷新记录和检测
         StreamTcpDetectLogFlush(tv, fw->stream_thread, p->flow, p, &fw->pq);
         AppLayerParserStateSetFlag(p->flow->alparser, APP_LAYER_PARSER_EOF_TS);
         AppLayerParserStateSetFlag(p->flow->alparser, APP_LAYER_PARSER_EOF_TC);
@@ -392,15 +395,16 @@ static inline void FlowWorkerStreamTCPUpdate(ThreadVars *tv, FlowWorkerThreadDat
     /* Packets here can safely access p->flow as it's locked */
     SCLogDebug("packet %"PRIu64": extra packets %u", p->pcap_cnt, fw->pq.len);
     Packet *x;
+    // 如果数据包队列没有上锁，取出数据包
     while ((x = PacketDequeueNoLock(&fw->pq))) {
         SCLogDebug("packet %"PRIu64" extra packet %p", p->pcap_cnt, x);
-
+        // 规则检测
         if (detect_thread != NULL) {
             FLOWWORKER_PROFILING_START(x, PROFILE_FLOWWORKER_DETECT);
             Detect(tv, x, detect_thread);
             FLOWWORKER_PROFILING_END(x, PROFILE_FLOWWORKER_DETECT);
         }
-
+        // 输出模块
         OutputLoggerLog(tv, x, fw->output_thread);
 
         if (timeout) {
@@ -533,12 +537,14 @@ static TmEcode FlowWorker(ThreadVars *tv, Packet *p, void *data)
     SCLogDebug("packet %"PRIu64" has flow? %s", p->pcap_cnt, p->flow ? "yes" : "no");
 
     /* handle TCP and app layer */
+    // 处理TCP和应用层协议
     if (p->flow && PKT_IS_TCP(p)) {
         SCLogDebug("packet %"PRIu64" is TCP. Direction %s", p->pcap_cnt, PKT_IS_TOSERVER(p) ? "TOSERVER" : "TOCLIENT");
         DEBUG_ASSERT_FLOW_LOCKED(p->flow);
 
         /* if detect is disabled, we need to apply file flags to the flow
          * here on the first packet. */
+        // 如果检测被禁用，我们需要在第一个数据包上对流设置文件标志
         if (detect_thread == NULL &&
                 ((PKT_IS_TOSERVER(p) && (p->flowflags & FLOW_PKT_TOSERVER_FIRST)) ||
                  (PKT_IS_TOCLIENT(p) && (p->flowflags & FLOW_PKT_TOCLIENT_FIRST))))
@@ -560,6 +566,7 @@ static TmEcode FlowWorker(ThreadVars *tv, Packet *p, void *data)
     /* handle Detect */
     DEBUG_ASSERT_FLOW_LOCKED(p->flow);
     SCLogDebug("packet %"PRIu64" calling Detect", p->pcap_cnt);
+    // 规则检测
     if (detect_thread != NULL) {
         FLOWWORKER_PROFILING_START(p, PROFILE_FLOWWORKER_DETECT);
         Detect(tv, p, detect_thread);
@@ -567,6 +574,7 @@ static TmEcode FlowWorker(ThreadVars *tv, Packet *p, void *data)
     }
 
     // Outputs.
+    // 输出模块
     OutputLoggerLog(tv, p, fw->output_thread);
 
     /* Prune any stored files. */

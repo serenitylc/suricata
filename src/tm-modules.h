@@ -44,12 +44,12 @@ typedef struct TmModule_ {
     const char *name;
 
     /** thread handling */
-    TmEcode (*ThreadInit)(ThreadVars *, const void *, void **);
+    TmEcode (*ThreadInit)(ThreadVars *, const void *, void **);  // 线程初始化
     void (*ThreadExitPrintStats)(ThreadVars *, void *);
     TmEcode (*ThreadDeinit)(ThreadVars *, void *);
 
     /** the packet processing function */
-    TmEcode (*Func)(ThreadVars *, Packet *, void *);
+    TmEcode (*Func)(ThreadVars *, Packet *, void *);  // 模块处理函数
 
     TmEcode (*PktAcqLoop)(ThreadVars *, void *, void *);
 
@@ -59,7 +59,7 @@ typedef struct TmModule_ {
     TmEcode (*Management)(ThreadVars *, void *);
 
     /** global Init/DeInit */
-    TmEcode (*Init)(void);
+    TmEcode (*Init)(void);   // 全局初始化模块函数
     TmEcode (*DeInit)(void);
 #ifdef UNITTESTS
     void (*RegisterTests)(void);

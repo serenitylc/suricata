@@ -1943,6 +1943,7 @@ static int SigValidate(DetectEngineCtx *de_ctx, Signature *s)
  * \internal
  * \brief Helper function for SigInit().
  */
+// 规则解析流程
 static Signature *SigInitHelper(DetectEngineCtx *de_ctx, const char *sigstr,
                                 uint8_t dir)
 {
@@ -2114,6 +2115,7 @@ static bool SigHasSameSourceAndDestination(const Signature *s)
  *
  * \retval Pointer to the Signature instance on success; NULL on failure.
  */
+// 解析规则并加载到引擎上下文
 Signature *SigInit(DetectEngineCtx *de_ctx, const char *sigstr)
 {
     SCEnter();
@@ -2419,6 +2421,7 @@ end:
  * \retval Pointer to the head Signature in the detection engine ctx sig_list
  *         on success; NULL on failure.
  */
+// 规则解析的入口函数
 Signature *DetectEngineAppendSig(DetectEngineCtx *de_ctx, const char *sigstr)
 {
     Signature *sig = SigInit(de_ctx, sigstr);

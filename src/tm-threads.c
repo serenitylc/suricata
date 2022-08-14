@@ -220,7 +220,9 @@ static int TmThreadTimeoutLoop(ThreadVars *tv, TmSlot *s)
         queue;
 
  */
-
+/* 完成线程的初始化，线程绑定cpu核心，
+调用PacketPoolInit(void)显示初始化当前线程的Packet的内存池，
+并根据max_pending_packets的大小，预先实例化对应数量的Packet *p 并放入packet pool中 */
 static void *TmThreadsSlotPktAcqLoop(void *td)
 {
     ThreadVars *tv = (ThreadVars *)td;

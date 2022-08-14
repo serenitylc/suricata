@@ -378,10 +378,11 @@ static void SignalHandlerSigHup(/*@unused@*/ int sig)
 
 void GlobalsInitPreConfig(void)
 {
-    // 初始化时间。包括：获取当前时间所用的spin lock，以及设置时区（调用tzset()即可）
+    // 初始化时间。包括：获取当前时间所用的spin lock，以及设置时区（调用tzset()）
     TimeInit();
     // 为快速模式匹配注册关键字。调用SupportFastPatternForSigMatchList函数，按照优先级大小插入到sm_fp_support_smlist_list链表
     SupportFastPatternForSigMatchTypes();
+    // 初始化阈值正则系统
     SCThresholdConfGlobalInit();
     // 读取/etc/protocols文件，建立IP层所承载的上层协议号和协议名的映射（如6-> ”TCP”,17-> ”UDP“）
     SCProtoNameInit();
@@ -2348,6 +2349,7 @@ static void SetupDelayedDetect(SCInstance *suri)
 
 }
 
+// 加载规则文件的签名规则
 static int LoadSignatures(DetectEngineCtx *de_ctx, SCInstance *suri)
 {
     if (SigLoadSignatures(de_ctx, suri->sig_file, suri->sig_file_exclusive) < 0) {
@@ -2644,7 +2646,7 @@ int PostConfLoadedSetup(SCInstance *suri)
         ConfSet("runmode", suri->runmode_custom_mode);
     }
 
-    // 初始化存储模块，这个模块可以用来临时存储一些数据，数据类型目前有两种：host、flow。
+    // 初始化存储模块，这个模块可以用来临时存储一些数据，数据类型目前有四种：host、flow、ippair、livedevice。
     StorageInit();
 #ifdef HAVE_PACKET_EBPF
     if (suri->run_mode == RUNMODE_AFP_DEV) {
@@ -2898,7 +2900,7 @@ int SuricataMain(int argc, char **argv)
     argv[0] 可执行程序名称
     */
     SCInstanceInit(&suricata, argv[0]);
-
+    // 在引擎中注册所有运行模式
     if (InitGlobal() != 0) {
         exit(EXIT_FAILURE);
     }
@@ -2934,10 +2936,11 @@ int SuricataMain(int argc, char **argv)
     }
 
     /* Initializations for global vars, queues, etc (memsets, mutex init..) */
+    // 初始化全局变量(数据包队列trans_q、数据队列data_queues、对应的mutex和cond、建立小写字母表)
     GlobalsInitPreConfig();
 
     /* Load yaml configuration file if provided. */
-    /* 调用LoadYamlConfig读取Yaml格式配置文件。若用户未在输入参数中指定配置文件，则使用默认配置文件（/etc/suricata/suricata.yaml）。
+    /* 加载Yaml格式配置文件。若用户未在输入参数中指定配置文件，则使用默认配置文件（/etc/suricata/suricata.yaml）。
     Yaml格式解析是通过libyaml库来完成的，解析的结果存储在配置节点树（见conf.c）中。
     对include机制的支持：在第一遍调用ConfYamlLoadFile载入主配置文件后，将在当前配置节点树中搜寻“include”节点，
     并对其每个子节点的值（即通过include语句所指定的子配置文件路径），同样调用ConfYamlLoadFile进行载入。 */
@@ -2963,7 +2966,7 @@ int SuricataMain(int argc, char **argv)
 
     /* Since our config is now loaded we can finish configurating the
      * logging module. */
-    // 再次初始化日志模块。这次，程序将会根据配置文件中日志输出配置（logging.outputs）填充SCLogInitData类型的结构体，调用SCLogInitLogModule重新初始化日志模块。
+    // 初始化日志模块。根据配置文件中日志输出配置（logging.outputs）填充SCLogInitData类型的结构体，调用SCLogInitLogModule初始化日志模块。
     SCLogLoadConfig(suricata.daemon, suricata.verbose, suricata.userid, suricata.groupid);
 
     // 打印版本信息。这是Suricata启动开始后第一条打印信息
@@ -3000,7 +3003,7 @@ int SuricataMain(int argc, char **argv)
         FeatureDump();
         goto out;
     }
-
+    // 记录开始时间
     SCSetStartTime(&suricata);
     RunModeDispatch(suricata.run_mode, suricata.runmode_custom_mode,
             suricata.capture_plugin_name, suricata.capture_plugin_args);

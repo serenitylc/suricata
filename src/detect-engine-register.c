@@ -442,7 +442,8 @@ int SigTableList(const char *keyword)
     }
     return TM_ECODE_DONE;
 }
-
+/* 初始化检测引擎，主要包括当前注册的检测引擎所支持的规则格式（与Snort规则基本一致）的关键字，
+如sid、priority、msg、within、distance等。*/
 void SigTableSetup(void)
 {
     memset(sigmatch_table, 0, sizeof(sigmatch_table));

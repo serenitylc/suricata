@@ -246,7 +246,7 @@ void RunModeRegisterRunModes(void)
     RunModeErfFileRegister();
     RunModeErfDagRegister();
     RunModeNapatechRegister();      // Napatech模式注册，解析Napatech网卡抓到的包
-    RunModeIdsAFPRegister();
+    RunModeIdsAFPRegister();        // IDS workers af-packet 模式注册
     RunModeIdsNetmapRegister();     // Netmap模式注册，解析通过Netmap抓到的包
     RunModeIdsNflogRegister();
     RunModeUnixSocketRegister();
@@ -459,6 +459,7 @@ int RunModeNeedsBypassManager(void)
  * \param description Description for this runmode.
  * \param RunModeFunc The function to be run for this runmode.
  */
+// IDS workers af-packet 模式下注册函数
 void RunModeRegisterNewRunMode(enum RunModes runmode,
                                const char *name,
                                const char *description,

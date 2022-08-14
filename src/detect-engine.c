@@ -91,7 +91,7 @@
 #define DETECT_ENGINE_DEFAULT_INSPECTION_RECURSION_LIMIT 3000
 
 static int DetectEngineCtxLoadConf(DetectEngineCtx *);
-
+// 实例化的检测引擎放入全局的 g_master_de_ctx 中
 static DetectEngineMasterCtx g_master_de_ctx = { SCMUTEX_INITIALIZER,
     0, 99, NULL, NULL, TENANT_SELECTOR_UNKNOWN, NULL, NULL, 0};
 

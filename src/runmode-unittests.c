@@ -223,7 +223,7 @@ static void RegisterUnittests(void)
  *
  * This function is terminal and will call exit after being called.
  */
-
+// 测试用例的执行入口
 void RunUnittests(int list_unittests, const char *regex_arg)
 {
 #ifdef UNITTESTS
