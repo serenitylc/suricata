@@ -753,7 +753,9 @@ Flow *FlowGetFlowFromHash(ThreadVars *tv, FlowLookupStruct *fls, Packet *p, Flow
     Flow *f = NULL;
 
     /* get our hash bucket and lock it */
+    // 获取packet的hash
     const uint32_t hash = p->flow_hash;
+    // 获取槽位。FlowBucket是flow的一个双向链表，head和tail都指向初始化的流。
     FlowBucket *fb = &flow_hash[hash % flow_config.hash_size];
     FBLOCK_LOCK(fb);
 

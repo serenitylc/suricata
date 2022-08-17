@@ -1174,11 +1174,13 @@ static inline uint32_t AdjustToAcked(const Packet *p,
  *  \param stream pointer to pointer as app-layer can switch flow dir
  *  \retval 0 success
  */
+// 从TcpStream中获取缓存数据，然后分析解析
 static int ReassembleUpdateAppLayer (ThreadVars *tv,
         TcpReassemblyThreadCtx *ra_ctx,
         TcpSession *ssn, TcpStream **stream,
         Packet *p, enum StreamUpdateDir dir)
 {
+    // 获取这个流的应用层数据的偏移量offset
     uint64_t app_progress = STREAM_APP_PROGRESS(*stream);
 
     SCLogDebug("app progress %"PRIu64, app_progress);
@@ -1191,6 +1193,8 @@ static int ReassembleUpdateAppLayer (ThreadVars *tv,
     while (1) {
         const uint8_t flags = StreamGetAppLayerFlags(ssn, *stream, p);
         bool check_for_gap_ahead = ((*stream)->data_required > 0);
+        /* 从stream流中获取数据。如果只有一个块，就直接获取，如果多个block，则根据偏移量获取。
+        此处数据、长度即为传入协议解析的数据和长度，mydata_len为offset和stream初始偏移量的差。*/
         bool gap_ahead =
                 GetAppBuffer(*stream, &mydata, &mydata_len, app_progress, check_for_gap_ahead);
         if (last_was_gap && mydata_len == 0) {
@@ -1203,7 +1207,7 @@ static int ReassembleUpdateAppLayer (ThreadVars *tv,
         DEBUG_VALIDATE_BUG_ON(mydata_len > (uint32_t)INT_MAX);
         if (mydata == NULL && mydata_len > 0 && CheckGap(ssn, *stream, p)) {
             SCLogDebug("sending GAP to app-layer (size: %u)", mydata_len);
-
+            // 空数据也在调用，应该在传递STREAM_GAP标识？
             int r = AppLayerHandleTCPData(tv, ra_ctx, p, p->flow, ssn, stream,
                     NULL, mydata_len,
                     StreamGetAppLayerFlags(ssn, *stream, p)|STREAM_GAP);
@@ -1319,6 +1323,7 @@ int StreamTcpReassembleAppLayer (ThreadVars *tv, TcpReassemblyThreadCtx *ra_ctx,
 #endif
     /* if no segments are in the list or all are already processed,
      * and state is beyond established, we send an empty msg */
+    // 没有片段数据需要处理
     if (!STREAM_HAS_SEEN_DATA(stream) || STREAM_RIGHT_EDGE(stream) <= STREAM_APP_PROGRESS(stream))
     {
         /* send an empty EOF msg if we have no segments but TCP state
@@ -1326,6 +1331,7 @@ int StreamTcpReassembleAppLayer (ThreadVars *tv, TcpReassemblyThreadCtx *ra_ctx,
         if (ssn->state >= TCP_CLOSING || (p->flags & PKT_PSEUDO_STREAM_END)) {
             SCLogDebug("sending empty eof message");
             /* send EOF to app layer */
+            // data数据为NULL，长度为0，结束
             AppLayerHandleTCPData(tv, ra_ctx, p, p->flow, ssn, &stream,
                                   NULL, 0,
                                   StreamGetAppLayerFlags(ssn, stream, p));

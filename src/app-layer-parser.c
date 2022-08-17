@@ -1327,7 +1327,8 @@ int AppLayerParserParse(ThreadVars *tv, AppLayerParserThreadCtx *alp_tctx, Flow 
         }
 #endif
         /* invoke the parser */
-        // 根据应用层协议号调用AppLayerParserProtoCtx中注册的应用层协议函数
+        /* 根据应用层协议号调用AppLayerParserProtoCtx中注册的应用层协议函数,
+        server or client 两个方向的函数指针，调用解析 */
         AppLayerResult res = p->Parser[direction](f, alstate, pstate, stream_slice,
                 alp_tctx->alproto_local_storage[f->protomap][alproto]);
         if (res.status < 0) {

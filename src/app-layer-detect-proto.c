@@ -485,6 +485,7 @@ static inline AppProto PPGetProto(const AppLayerProtoDetectProbingParserElement 
 
         AppProto alproto = ALPROTO_UNKNOWN;
         if (flags & STREAM_TOSERVER && pe->ProbingParserTs != NULL) {
+            // 调用解析函数来解析报文，获取具体的应用层协议类型
             alproto = pe->ProbingParserTs(f, flags, buf, buflen, rdir);
         } else if (flags & STREAM_TOCLIENT && pe->ProbingParserTc != NULL) {
             alproto = pe->ProbingParserTc(f, flags, buf, buflen, rdir);

@@ -360,6 +360,7 @@ error:
     return NULL;
 }
 
+// 线程执行入口函数
 static void *TmThreadsSlotVar(void *td)
 {
     ThreadVars *tv = (ThreadVars *)td;
@@ -368,10 +369,11 @@ static void *TmThreadsSlotVar(void *td)
     char run = 1;
     TmEcode r = TM_ECODE_OK;
 
+    // 初始化线程池
     PacketPoolInit();//Empty();
-
+    // 设置线程名
     SCSetThreadName(tv->name);
-
+    // 设置线程优先级
     if (tv->thread_setup_flags != 0)
         TmThreadSetupOptions(tv);
 
@@ -380,6 +382,7 @@ static void *TmThreadsSlotVar(void *td)
 
     /* check if we are setup properly */
     if (s == NULL || tv->tmqh_in == NULL || tv->tmqh_out == NULL) {
+        // 设置线程标识
         TmThreadsSetFlag(tv, THV_CLOSED | THV_RUNNING_DONE);
         pthread_exit((void *) -1);
         return NULL;
@@ -388,6 +391,7 @@ static void *TmThreadsSlotVar(void *td)
     for (; s != NULL; s = s->slot_next) {
         if (s->SlotThreadInit != NULL) {
             void *slot_data = NULL;
+            // 遍历 solt执行函数 进行线程初始化
             r = s->SlotThreadInit(tv, s->slot_initdata, &slot_data);
             if (r != TM_ECODE_OK) {
                 TmThreadsSetFlag(tv, THV_CLOSED | THV_RUNNING_DONE);
@@ -442,6 +446,7 @@ static void *TmThreadsSlotVar(void *td)
         }
 
         /* input a packet */
+        // 循环从队列中获取packet包信息
         p = tv->tmqh_in(tv);
 
         /* if we didn't get a packet see if we need to do some housekeeping */
@@ -457,6 +462,7 @@ static void *TmThreadsSlotVar(void *td)
 
         if (p != NULL) {
             /* run the thread module(s) */
+            // 运行solt里面的插件处理这个包
             r = TmThreadsSlotVarRun(tv, p, s);
             if (r == TM_ECODE_FAILED) {
                 TmqhOutputPacketpool(tv, p);
@@ -465,9 +471,13 @@ static void *TmThreadsSlotVar(void *td)
             }
 
             /* output the packet */
+            // 处理完毕后放入输出队列
             tv->tmqh_out(tv, p);
 
             /* now handle the stream pq packets */
+            /* 处理solt的post队列的包。这是一个PacketQueue，当SlotFunc被调用以处理数据包时，可能会生成新的需要处理的伪造数据包，
+            插入slot_post_pq队列的伪造数据包将晚于原有数据包进入下一个TmSlot开始处理。
+            当原数据包由tmqh_out交给下一个线程或释放后，才能开始slot_post_pq的处理。*/
             TmThreadsHandleInjectedPackets(tv);
         }
 

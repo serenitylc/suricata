@@ -217,6 +217,7 @@ static void CheckWorkQueue(ThreadVars *tv, FlowWorkerThreadData *fw,
  */
 static inline TmEcode FlowUpdate(ThreadVars *tv, FlowWorkerThreadData *fw, Packet *p)
 {
+    // 设置流的时间、方向
     FlowHandlePacketUpdate(p->flow, p, tv, fw->dtv);
 
     int state = p->flow->flow_state;
@@ -516,9 +517,11 @@ static TmEcode FlowWorker(ThreadVars *tv, Packet *p, void *data)
     if (p->flags & PKT_WANTS_FLOW) {
         FLOWWORKER_PROFILING_START(p, PROFILE_FLOWWORKER_FLOW);
 
+        // 根据packet找到或新建对应的flow
         FlowHandlePacket(tv, &fw->fls, p);
         if (likely(p->flow != NULL)) {
             DEBUG_ASSERT_FLOW_LOCKED(p->flow);
+            // 根据flow信息更新packet上一些信息，比如方向等。
             if (FlowUpdate(tv, fw, p) == TM_ECODE_DONE) {
                 goto housekeeping;
             }

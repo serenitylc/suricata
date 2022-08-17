@@ -658,6 +658,7 @@ int AppLayerHandleTCPData(ThreadVars *tv, TcpReassemblyThreadCtx *ra_ctx,
 
     const uint8_t direction = (flags & STREAM_TOSERVER) ? 0 : 1;
 
+    // 获取协议（协议已经在流里面进行了标记）
     if (flags & STREAM_TOSERVER) {
         alproto = f->alproto_ts;
     } else {
@@ -701,6 +702,7 @@ int AppLayerHandleTCPData(ThreadVars *tv, TcpReassemblyThreadCtx *ra_ctx,
     if (alproto == ALPROTO_UNKNOWN && (flags & STREAM_START)) {
         DEBUG_VALIDATE_BUG_ON(FlowChangeProto(f));
         /* run protocol detection */
+        // 不知道协议类型，就需要继续进行判断
         if (TCPProtoDetect(tv, ra_ctx, app_tctx, p, f, ssn, stream,
                            data, data_len, flags) != 0) {
             goto failure;

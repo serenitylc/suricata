@@ -4918,7 +4918,8 @@ int StreamTcpPacket (ThreadVars *tv, Packet *p, StreamTcpThread *stt,
     SCLogDebug("p->pcap_cnt %"PRIu64, p->pcap_cnt);
 
     HandleThreadId(tv, p, stt);
-
+     /* 在packet的结构体中有归属的flow指针，flow又包含tcp_session数据。
+     TcpSession是个双向流，包括客户端和服务器端。*/
     TcpSession *ssn = (TcpSession *)p->flow->protoctx;
 
     /* track TCP flags */
@@ -4958,6 +4959,7 @@ int StreamTcpPacket (ThreadVars *tv, Packet *p, StreamTcpThread *stt,
      * the IP only module, or from a reassembled msg and/or from an
      * applayer detection, then drop the rest of the packets of the
      * same stream and avoid inspecting it any further */
+    // 如果是IPS模式，需要丢包，则进行丢包处理
     if (StreamTcpCheckFlowDrops(p) == 1) {
         SCLogDebug("This flow/stream triggered a drop rule");
         FlowSetNoPacketInspectionFlag(p->flow);
@@ -4983,6 +4985,7 @@ int StreamTcpPacket (ThreadVars *tv, Packet *p, StreamTcpThread *stt,
         if (p->flags & PKT_PSEUDO_STREAM_END) {
             if (PKT_IS_TOCLIENT(p)) {
                 ssn->client.last_ack = TCP_GET_ACK(p);
+                // 收到ACK后执行重组，按照包的方向进行客户端/服务端报文重组
                 StreamTcpReassembleHandleSegment(tv, stt->ra_ctx, ssn,
                         &ssn->server, p, pq);
             } else {
