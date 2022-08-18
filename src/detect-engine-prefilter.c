@@ -140,6 +140,11 @@ void DetectRunPrefilterTx(DetectEngineThreadCtx *det_ctx,
     }
 }
 
+/* prefilter机制
+每一条规则有很多的匹配条件，只取该条规则中的其中一个匹配条件放入prefilter中，
+在该规则匹配命中之后，才会在后续的流程继续匹配剩下的条件；
+如果没有命中，则该条规则后续的条件也不会再去匹配检测，从而节省匹配的时间。
+*/
 void Prefilter(DetectEngineThreadCtx *det_ctx, const SigGroupHead *sgh,
         Packet *p, const uint8_t flags)
 {
@@ -154,6 +159,9 @@ void Prefilter(DetectEngineThreadCtx *det_ctx, const SigGroupHead *sgh,
         PACKET_PROFILING_DETECT_END(p, PROF_DETECT_PF_RECORD);
     }
 #endif
+    /* 传输层以下的 packet prefilter
+    主要针对传输层及以下的支持prefilter的协议字段，例如TTL以及TCP的ACK等二进制协议字段，通常都是进行数字的比较。
+    都会调用PrefilterSetupPacketHeader函数进行prefilter的注册。*/
     if (sgh->pkt_engines) {
         PACKET_PROFILING_DETECT_START(p, PROF_DETECT_PF_PKT);
         /* run packet engines */
@@ -199,6 +207,7 @@ void Prefilter(DetectEngineThreadCtx *det_ctx, const SigGroupHead *sgh,
     SCReturn;
 }
 
+// prefilter的规则都会通过该函数加入到PrefilterEngineList *pkt_engines中
 int PrefilterAppendEngine(DetectEngineCtx *de_ctx, SigGroupHead *sgh,
         void (*PrefilterFunc)(DetectEngineThreadCtx *det_ctx, Packet *p, const void *pectx),
         void *pectx, void (*FreeFunc)(void *pectx),
@@ -233,6 +242,7 @@ int PrefilterAppendEngine(DetectEngineCtx *de_ctx, SigGroupHead *sgh,
     return 0;
 }
 
+// 传输层以上的荷载payload prefilter， 通过该函数注册到payload_engines中
 int PrefilterAppendPayloadEngine(DetectEngineCtx *de_ctx, SigGroupHead *sgh,
         void (*PrefilterFunc)(DetectEngineThreadCtx *det_ctx, Packet *p, const void *pectx),
         void *pectx, void (*FreeFunc)(void *pectx),

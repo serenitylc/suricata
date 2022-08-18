@@ -1174,7 +1174,7 @@ static inline uint32_t AdjustToAcked(const Packet *p,
  *  \param stream pointer to pointer as app-layer can switch flow dir
  *  \retval 0 success
  */
-// 从TcpStream中获取缓存数据，然后分析解析
+// 从TcpStream中获取缓存数据，然后更新应用层
 static int ReassembleUpdateAppLayer (ThreadVars *tv,
         TcpReassemblyThreadCtx *ra_ctx,
         TcpSession *ssn, TcpStream **stream,
