@@ -528,6 +528,14 @@ static int TCPProtoDetect(ThreadVars *tv,
          * start of the request/toserver is incomplete and no reliable
          * detection and parsing is possible. So we give up.
          */
+        /* 如果ssn在中游，我们可能会遇到HTTP请求的起始部分丢失的情况。
+        我们不会基于请求检测HTTP。但是，响应没有问题，所以我们还是检测到了HTTP。这将导致将不完整的请求传递给htp解析器。
+        
+        这是可以观察到的，http解析器随后在不完整的数据中看到许多虚假请求。
+        
+        为了应对这种情况，一个中游会话必须在服务器方向找到它的协议。
+        如果没有，我们假定请求/toserver的启动是不完整的，不可能进行可靠的检测和解析。
+        所以我们放弃了。*/
         if ((ssn->flags & STREAMTCP_FLAG_MIDSTREAM) &&
                 !(ssn->flags & STREAMTCP_FLAG_MIDSTREAM_SYNACK))
         {

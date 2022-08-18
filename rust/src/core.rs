@@ -31,6 +31,7 @@ pub type AppLayerEventType = std::os::raw::c_int;
 pub const APP_LAYER_EVENT_TYPE_TRANSACTION : i32 = 1;
 pub const APP_LAYER_EVENT_TYPE_PACKET      : i32 = 2;
 
+// 流的状态类型
 pub const STREAM_START:    u8 = 0x01;
 pub const STREAM_EOF:      u8 = 0x02;
 pub const STREAM_TOSERVER: u8 = 0x04;

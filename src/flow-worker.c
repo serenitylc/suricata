@@ -377,6 +377,9 @@ static void FlowPruneFiles(Packet *p)
  *  packet is real (or related to a real packet) we need to push the packets
  *  on, so IPS logic stays valid.
  */
+/* 我们既可以从流超时路径调用，也可以从“真实”流量路径调用。
+如果在超时路径中，我们为冲洗管道伪造的任何额外数据包都不应该离开我们的作用域。
+如果原始报文是真实的(或与真实报文相关)，我们需要推送这些报文，这样IPS逻辑才能保持有效。*/
 static inline void FlowWorkerStreamTCPUpdate(ThreadVars *tv, FlowWorkerThreadData *fw, Packet *p,
         void *detect_thread, const bool timeout)
 {
@@ -417,7 +420,8 @@ static inline void FlowWorkerStreamTCPUpdate(ThreadVars *tv, FlowWorkerThreadDat
         }
     }
 }
-
+/* 获取被其他线程注入的流并处理它们（认为是闲置的流，在此回收），将其附加到工作队列中，
+如果有必要会创建伪数据包并入此流中，并调用FlowWorkerFlowTimeout函数处理此流（检测，输出等）*/
 static void FlowWorkerFlowTimeout(ThreadVars *tv, Packet *p, FlowWorkerThreadData *fw,
         void *detect_thread)
 {
