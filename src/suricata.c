@@ -906,6 +906,7 @@ int coverage_unittests;
 int g_ut_modules;
 int g_ut_covered;
 
+// 注册所有模块
 void RegisterAllModules(void)
 {
     // zero all module storage
@@ -973,7 +974,7 @@ void RegisterAllModules(void)
     TmModuleReceiveDPDKRegister();
     TmModuleDecodeDPDKRegister();
 }
-
+// 加载yaml配置文件
 static TmEcode LoadYamlConfig(SCInstance *suri)
 {
     SCEnter();

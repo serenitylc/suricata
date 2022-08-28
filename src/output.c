@@ -1019,7 +1019,9 @@ void OutputClearActiveLoggers(void)
 
 void TmModuleLoggerRegister(void)
 {
+    // 注册日志记录器根节点，其包含了全局变量 registered_loggers，这是一个链表，每个节点代表一类日志记录器
     OutputRegisterRootLoggers();
+    // 注册具体的日志输出模块，如fast log、 http log、dns log等，这些日志输出模块也是通过一个全局链表 output_modules 串联起来
     OutputRegisterLoggers();
 }
 

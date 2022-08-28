@@ -58,6 +58,7 @@ int rule_engine_analysis_set = 0;
  *  \param sig_file The name of the file
  *  \retval str Pointer to the string path + sig_file
  */
+// 加载完整的规则路径
 char *DetectLoadCompleteSigPath(const DetectEngineCtx *de_ctx, const char *sig_file)
 {
     const char *defaultpath = NULL;
@@ -121,6 +122,7 @@ char *DetectLoadCompleteSigPath(const DetectEngineCtx *de_ctx, const char *sig_f
  *  \param badsigs_tot Will store number of invalid signatures in the file
  *  \retval 0 on success, -1 on error
  */
+// 加载规则文件
 static int DetectLoadSigFile(DetectEngineCtx *de_ctx, char *sig_file,
         int *goodsigs, int *badsigs)
 {
@@ -173,6 +175,7 @@ static int DetectLoadSigFile(DetectEngineCtx *de_ctx, char *sig_file,
         de_ctx->rule_file = sig_file;
         de_ctx->rule_line = lineno - multiline;
 
+        // 单条规则解析入口
         sig = DetectEngineAppendSig(de_ctx, line);
         if (sig != NULL) {
             if (rule_engine_analysis_set || fp_engine_analysis_set) {
@@ -221,6 +224,7 @@ static int DetectLoadSigFile(DetectEngineCtx *de_ctx, char *sig_file,
  *  \param sig_file Filename (or pattern) holding signatures
  *  \retval -1 on error
  */
+// 扩展通配符，并从每个匹配文件中读取签名
 static int ProcessSigFiles(DetectEngineCtx *de_ctx, char *pattern,
         SigFileLoaderStat *st, int *good_sigs, int *bad_sigs)
 {
@@ -280,6 +284,7 @@ static int ProcessSigFiles(DetectEngineCtx *de_ctx, char *pattern,
  *  \param sig_file_exclusive File passed in 'sig_file' should be loaded exclusively.
  *  \retval -1 on error
  */
+// 加载规则
 int SigLoadSignatures(DetectEngineCtx *de_ctx, char *sig_file, int sig_file_exclusive)
 {
     SCEnter();
@@ -367,7 +372,9 @@ int SigLoadSignatures(DetectEngineCtx *de_ctx, char *sig_file, int sig_file_excl
         goto end;
     }
 
+    // 注册规则优先级
     SCSigRegisterSignatureOrderingFuncs(de_ctx);
+    // 规则排序
     SCSigOrderSignatures(de_ctx);
     SCSigSignatureOrderingModuleCleanup(de_ctx);
 
@@ -377,6 +384,7 @@ int SigLoadSignatures(DetectEngineCtx *de_ctx, char *sig_file, int sig_file_excl
     }
 
     /* Setup the signature group lookup structure and pattern matchers */
+    // 设置规则组查找结构和模式匹配器
     if (SigGroupBuild(de_ctx) < 0)
         goto end;
 

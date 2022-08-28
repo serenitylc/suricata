@@ -537,6 +537,7 @@ typedef struct SignatureInitData_ {
 } SignatureInitData;
 
 /** \brief Signature container */
+// 规则容器
 typedef struct Signature_ {
     uint32_t flags;
     /* coccinelle: Signature:flags:SIG_FLAG_ */
@@ -782,6 +783,7 @@ enum DetectEngineType
 #define FLOW_STATES 2
 
 /** \brief main detection engine ctx */
+// 主要的检测引擎会话
 typedef struct DetectEngineCtx_ {
     uint8_t flags;
     int failure_fatal;
@@ -1380,9 +1382,9 @@ typedef struct SigGroupHeadInitData_ {
     MpmCtx **pkt_mpms;
     MpmCtx **frame_mpms;
 
-    PrefilterEngineList *pkt_engines;
-    PrefilterEngineList *payload_engines;
-    PrefilterEngineList *tx_engines;
+    PrefilterEngineList *pkt_engines;    // 传输层以下的packet prefilter
+    PrefilterEngineList *payload_engines;// 传输层以上的payload prefilter
+    PrefilterEngineList *tx_engines;     // 涉及事物相关
     PrefilterEngineList *frame_engines;
 
     /** number of sigs in this group */

@@ -1293,6 +1293,7 @@ SCLogOPIfaceCtx *SCLogInitOPIfaceCtx(const char *iface_name,
  *               logging subsystem.
  * \initonly
  */
+// 初始化日志模块
 void SCLogInitLogModule(SCLogInitData *sc_lid)
 {
     /* De-initialize the logging context, if it has already init by the
@@ -1314,7 +1315,7 @@ void SCLogInitLogModule(SCLogInitData *sc_lid)
     }
     memset(sc_log_config, 0, sizeof(SCLogConfig));
 
-    /* 初始化一些重要指标，现在sc_lid为NULL，所以全部为默认值 */
+    /* 初始化一些重要指标，基于SCLogConfig完善日志模块的配置，现在sc_lid为NULL，所以全部为默认值 */
     SCLogSetLogLevel(sc_lid, sc_log_config);
     SCLogSetLogFormat(sc_lid, sc_log_config);
     SCLogSetOPIface(sc_lid, sc_log_config);

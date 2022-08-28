@@ -1120,6 +1120,7 @@ static inline int SigParseList(char **input, char *output,
  *  \internal
  *  \brief split a signature string into a few blocks for further parsing
  */
+// 拆分规则字符串为一些小的block
 static int SigParseBasics(DetectEngineCtx *de_ctx,
         Signature *s, const char *sigstr, SignatureParser *parser, uint8_t addrs_direction)
 {
@@ -1215,6 +1216,7 @@ error:
  *  \param -1 parse error
  *  \param 0 ok
  */
+// 解析一条规则
 static int SigParse(DetectEngineCtx *de_ctx, Signature *s,
         const char *sigstr, uint8_t addrs_direction, SignatureParser *parser)
 {
@@ -1957,6 +1959,7 @@ static Signature *SigInitHelper(DetectEngineCtx *de_ctx, const char *sigstr,
     /* default gid to 1 */
     sig->gid = 1;
 
+    // 将字符串类型的规则转化为 SignatureParser 结构体对象，后续针对规则各个部分的解析会基于此对象进行
     int ret = SigParse(de_ctx, sig, sigstr, dir, &parser);
     if (ret == -3) {
         de_ctx->sigerror_silent = true;
@@ -2049,6 +2052,7 @@ static Signature *SigInitHelper(DetectEngineCtx *de_ctx, const char *sigstr,
     }
 
     /* validate signature, SigValidate will report the error reason */
+    // 验证规则，并说明错误原因
     if (SigValidate(de_ctx, sig) == 0) {
         goto error;
     }
@@ -2290,6 +2294,18 @@ static inline int DetectEngineSignatureIsDuplicate(DetectEngineCtx *de_ctx,
     sw->s = sig;
 
     /* check if we have a duplicate entry for this signature */
+    /* 规则去重的依据是从Hash表中查看索引值是否存在
+    该Hash表的初始化路径为: 
+    SuricataInit->
+        PostConfLoadedDetectSetup->
+            DetectEngineMultiTenantSetup->
+                Detect LoaderSetupLoadTenant->
+                    DetectLoaderFuncLoadTenant->
+                        DetectEngineMultiTenant LoadTenant->
+                            DetectEngineCtxInitReal->
+                                DetectParseDupSigHashInit
+    其中Hash表基表长度为 15000，hash计算方式就是基于基表取模。
+    该Hash表仅在加载规则阶段使用，在规则加载完毕后，会进行释放，释放处为SigGroupBuild后，SigLoadSignatures 返回时。*/
     sw_dup = HashListTableLookup(de_ctx->dup_sig_hash_table, (void *)sw, 0);
     /* we don't have a duplicate entry for this sig */
     if (sw_dup == NULL) {
@@ -2430,11 +2446,13 @@ Signature *DetectEngineAppendSig(DetectEngineCtx *de_ctx, const char *sigstr)
     }
 
     /* checking for the status of duplicate signature */
+    // 检查重复签名的状态
     int dup_sig = DetectEngineSignatureIsDuplicate(de_ctx, sig);
     /* a duplicate signature that should be chucked out.  Check the previously
      * called function details to understand the different return values */
     if (dup_sig == 1) {
         SCLogError(SC_ERR_DUPLICATE_SIG, "Duplicate signature \"%s\"", sigstr);
+        // 规则去重
         goto error;
     } else if (dup_sig == 2) {
         SCLogWarning(SC_ERR_DUPLICATE_SIG, "Signature with newer revision,"
@@ -2464,6 +2482,7 @@ Signature *DetectEngineAppendSig(DetectEngineCtx *de_ctx, const char *sigstr)
 
 error:
     /* free the 2nd sig bidir may have set up */
+    // sig <->方向，则需要释放 sig->next
     if (sig != NULL && sig->next != NULL) {
         SigFree(de_ctx, sig->next);
         sig->next = NULL;

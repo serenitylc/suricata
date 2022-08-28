@@ -786,6 +786,9 @@ void SCSigOrderSignatures(DetectEngineCtx *de_ctx)
  * \param de_ctx Pointer to the detection engine context from which the
  *               signatures have to be ordered.
  */
+/* 注册签名排序功能。注册功能的顺序表示优先级。
+第一个注册的函数比在它之后注册的函数提供更高的优先级。
+要添加新的注册功能，请根据您希望为该关键字提供的优先级，将其按以下顺序列出在正确的位置进行注册。*/
 void SCSigRegisterSignatureOrderingFuncs(DetectEngineCtx *de_ctx)
 {
     SCLogDebug("registering signature ordering functions");

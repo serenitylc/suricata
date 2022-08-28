@@ -194,6 +194,7 @@ static void OutputStatsLogExitPrintStats(ThreadVars *tv, void *thread_data)
     }
 }
 
+// 主要完成赋值、线程初始化、清理内存等
 void TmModuleStatsLoggerRegister (void)
 {
     tmm_modules[TMM_STATSLOGGER].name = "__stats_logger__";
