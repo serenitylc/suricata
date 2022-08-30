@@ -120,7 +120,7 @@ enum {
 
 #include "runmodes.h"
 
-/* 为了更好的封装性（不使用一堆零散的参数或全局变量），采用SCInstance结构体变量统一保存程序当前的一些状态、标志等上下文环境，通常用作参数传递给各模块的子函数。*/
+/* 为了更好的封装性（不使用一堆零散的参数或全局变量），采用 SCInstance 结构体变量统一保存程序当前的一些状态、标志等上下文环境，通常用作参数传递给各模块的子函数 */
 typedef struct SCInstance_ {
     enum RunModes run_mode;
     enum RunModes aux_run_mode;
