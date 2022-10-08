@@ -2608,7 +2608,7 @@ int PostConfLoadedSetup(SCInstance *suri)
 #endif
 
     /* load the pattern matchers */
-    /* MpmTableSetup：设置多模式匹配表，该表中每一项就是一个实现了某种多模式匹配算法（如WuManber、AC）的匹配器。 
+    /* MpmTableSetup：设置多模匹配表，表中每一项就是一个实现了某种多模匹配算法的匹配器。 
      * 以注册AC匹配器为例，MpmTableSetup 会调用 MpmACRegister 函数实现AC注册，
      * 函数内部其实只是填充 mpm_table 中对应AC的那一项（mpm_table[MPM_AC]）的各个字段，
      * 如：匹配器名称（”ac”）、初始化函数（SCACInitCtx）、增加模式函数（SCACAddPatternCS）、实际的搜索执行函数（SCACSearch） 
@@ -2663,10 +2663,10 @@ int PostConfLoadedSetup(SCInstance *suri)
     MacSetRegisterFlowStorage();
 
     /* 应用层协议设置。
-    其中，AppLayerProtoDetectSetup函数初始化该模块所用到的多模式匹配器；
-    AppLayerParserSetup函数通过传输层和应用层协议号构建了一个二维数组，并在该数组中为相应的流重组深度赋值；
-    AppLayerParserRegisterProtocolParsers函数注册各种应用层协议的解析器（如RegisterHTPParsers函数对应HTTP协议）；
-    AppLayerProtoDetectPrepareState函数的功能暂时也没弄明白。*/
+     * 其中，AppLayerProtoDetectSetup函数初始化该模块所用到的多模式匹配器；
+     * AppLayerParserSetup函数通过传输层和应用层协议号构建了一个二维数组，并在该数组中为相应的流重组深度赋值；
+     * AppLayerParserRegisterProtocolParsers函数注册各种应用层协议的解析器（如RegisterHTPParsers函数对应HTTP协议）；
+     */
     AppLayerSetup();
 
     /* Suricata will use this umask if provided. By default it will use the
@@ -2710,7 +2710,8 @@ int PostConfLoadedSetup(SCInstance *suri)
     SigTableSetup(); /* load the rule keywords */
     SigTableApplyStrictCommandlineOption(suri->strict_rule_parsing_string);
     /* 初始化queue handler（队列处理函数），这个是衔接线程模块和数据包队列之间的桥梁，目前共有5类handler：simple、nfq、packetpool、flow、ringbuffer
-    每类handler内部都有一个InHandler和OutHandler，一个用于从上一级队列中获取数据包，另一个用于处理完毕后将数据包送入下一级队列。*/
+     * 每类handler内部都有一个InHandler和OutHandler，一个用于从上一级队列中获取数据包，另一个用于处理完毕后将数据包送入下一级队列
+     */
     TmqhSetup();
 
     /* TagInitCtx、ThresholdInit：与规则中的tag、threshould关键字的实现相关，
@@ -2737,10 +2738,11 @@ int PostConfLoadedSetup(SCInstance *suri)
 
     FeatureTrackingRegister(); /* must occur prior to output mod registration */
     /* 这是个非常重要的函数！里面注册了Suricata所支持的所有线程模块（Thread Module）。
-    以pcap相关模块为例，TmModuleReceivePcapRegister函数注册了Pcap捕获模块，
-    而TmModuleDecodePcapRegister函数注册了Pcap数据包解码模块。
-    所谓注册，就是在tmm_modules模块数组中对应的那项中填充TmModule结构的所有字段，
-    这些字段包括：模块名字、线程初始化函数、包处理或包获取函数、线程退出清理函数、一些标志位等等。*/
+     * 以pcap相关模块为例，TmModuleReceivePcapRegister函数注册了Pcap捕获模块，
+     * 而TmModuleDecodePcapRegister函数注册了Pcap数据包解码模块。
+     * 所谓注册，就是在tmm_modules模块数组中对应的那项中填充TmModule结构的所有字段，
+     * 这些字段包括：模块名字、线程初始化函数、包处理或包获取函数、线程退出清理函数、一些标志位等等。
+     */
     RegisterAllModules();
 #ifdef HAVE_PLUGINS
     SCPluginsLoad(suri->capture_plugin_name, suri->capture_plugin_args);

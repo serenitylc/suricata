@@ -174,6 +174,7 @@ typedef struct SCLogConfig_ {
 
     char *op_filter;
     /* compiled pcre filter expression */
+    // 编译pcre过滤表达式
     pcre2_code *op_filter_regex;
     pcre2_match_data *op_filter_regex_match;
 

@@ -783,7 +783,7 @@ enum DetectEngineType
 #define FLOW_STATES 2
 
 /** \brief main detection engine ctx */
-// 主要的检测引擎会话
+// 主要的检测引擎上下文
 typedef struct DetectEngineCtx_ {
     uint8_t flags;
     int failure_fatal;
@@ -1279,6 +1279,7 @@ enum {
 #define SIG_GROUP_HEAD_HAVEFILESHA1     BIT_U32(23)
 #define SIG_GROUP_HEAD_HAVEFILESHA256   BIT_U32(24)
 
+// 多模分组
 enum MpmBuiltinBuffers {
     MPMB_TCP_PKT_TS,
     MPMB_TCP_PKT_TC,

@@ -429,6 +429,7 @@ static inline int FlowCompareESP(Flow *f, const Packet *p)
            f->esp.spi == ESP_GET_SPI(p);
 }
 
+// 当suricata收到一个特定协议的packet后，会计算一个流的hash值，设置PKT_WANTS_FLOW标志。后续FlowWorker会基于该标志进行流的查找或分配。
 void FlowSetupPacket(Packet *p)
 {
     p->flags |= PKT_WANTS_FLOW;
@@ -583,6 +584,7 @@ static Flow *FlowGetNew(ThreadVars *tv, FlowLookupStruct *fls, Packet *p)
     /* get a flow from the spare queue */
     Flow *f = FlowQueuePrivateGetFromTop(&fls->spare_queue);
     if (f == NULL) {
+        // 当一条新流到达而spare队列中没有剩余的空闲流，进入快速分配流程
         f = FlowSpareSync(tv, fls, p, emerg);
     }
     if (f == NULL) {

@@ -505,6 +505,17 @@ typedef struct Flow_
     uint64_t tosrcbytecnt;
 } Flow;
 
+/* 流可以处于不同的状态。
+ * Suricata区分TCP流状态和UDP流状态。
+ * TCP流状态：
+ *     - New: 三次握手期间的时间段。
+ *     - Established: 三次握手期完成后的状态。
+ *     - Closed: 关闭状态。有几种方法可以结束流程。这是通过复位或四次FIN挥手进行的。
+ * UDP流状态：
+ *     - New: 流刚刚创建后的状态。
+ *     - Established: 数据包从两个方向发送接收。
+ *     - Local_bypassed: 仅从一个方向发送数据包的状态。如果数据包到来的时间超过1/2超时时间，则降级到Local_bypassed状态。
+ */
 enum FlowState {
     FLOW_STATE_NEW = 0,
     FLOW_STATE_ESTABLISHED,

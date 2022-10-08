@@ -133,6 +133,7 @@ static void DetectRun(ThreadVars *th_v,
     }
 
     /* run the prefilters for packets */
+    // 运行预匹配机制
     DetectRunPrefilterPkt(th_v, de_ctx, det_ctx, p, &scratch);
 
     PACKET_PROFILING_DETECT_START(p, PROF_DETECT_RULES);

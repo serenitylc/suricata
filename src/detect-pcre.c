@@ -199,6 +199,7 @@ int DetectPcrePayloadMatch(DetectEngineThreadCtx *det_ctx, const Signature *s,
     }
 
     /* run the actual pcre detection */
+    // 执行真正的pcre检测
     pcre2_match_data *match =
             (pcre2_match_data *)DetectThreadCtxGetKeywordThreadCtx(det_ctx, pe->thread_ctx_id);
 

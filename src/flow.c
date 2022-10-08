@@ -606,6 +606,7 @@ void FlowInitConfig(bool quiet)
 
     /* alloc hash memory */
     uint64_t hash_size = flow_config.hash_size * sizeof(FlowBucket);
+    // 检查内存分配的字节数是否超过了memcap
     if (!(FLOW_CHECK_MEMCAP(hash_size))) {
         SCLogError(SC_ERR_FLOW_INIT, "allocating flow hash failed: "
                 "max flow memcap is smaller than projected hash size. "

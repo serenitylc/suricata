@@ -94,6 +94,7 @@ void DetectParseFreeRegexes(void);
 void DetectParseFreeRegex(DetectParseRegex *r);
 
 /* parse regex exec */
+// 解析正则执行
 int DetectParsePcreExec(
         DetectParseRegex *parse_regex, const char *str, int start_offset, int options);
 int SC_Pcre2SubstringCopy(
