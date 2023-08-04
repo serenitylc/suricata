@@ -521,6 +521,9 @@ static OutputInitResult OutputFilestoreLogInitCtx(ConfNode *conf)
     SCReturnCT(result, "OutputInitResult");
 }
 
+// 输出模块线程上下文初始化接口 OutputFilestoreLogThreadInit
+// 输出模块线程上下文销毁接口 OutputFilestoreLogThreadDeinit
+// 输出模块线程结束时状态打印接口 ThreadExitPrintStatsFunc
 void OutputFilestoreRegister(void)
 {
     OutputRegisterFiledataModule(LOGGER_FILE_STORE, MODULE_NAME, "file-store",

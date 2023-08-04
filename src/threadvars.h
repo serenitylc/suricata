@@ -59,6 +59,7 @@ typedef struct ThreadVars_ {
     /** function pointer to the function that runs the packet pipeline for
      *  this thread. It is passed directly to pthread_create(), hence the
      *  void pointers in and out. */
+    // 工作线程处理流程
     void *(*tm_func)(void *);
 
     char name[16];

@@ -115,6 +115,7 @@ TmEcode TmThreadsSlotVarRun(ThreadVars *tv, Packet *p, TmSlot *slot)
 {
     for (TmSlot *s = slot; s != NULL; s = s->slot_next) {
         PACKET_PROFILING_TMM_START(p, s->tm_id);
+        // 执行solt的核心处理逻辑来完成对报文的处理
         TmEcode r = s->SlotFunc(tv, p, SC_ATOMIC_GET(s->slot_data));
         PACKET_PROFILING_TMM_END(p, s->tm_id);
 
@@ -809,7 +810,7 @@ TmEcode TmThreadSetCPUAffinity(ThreadVars *tv, uint16_t cpu)
     return TM_ECODE_OK;
 }
 
-
+// 设置线程cpu亲和性
 TmEcode TmThreadSetCPU(ThreadVars *tv, uint8_t type)
 {
     if (!threading_set_cpu_affinity)
@@ -1645,6 +1646,7 @@ void TmThreadClearThreadsFamily(int family)
  *
  * \retval TM_ECODE_OK on success and TM_ECODE_FAILED on failure
  */
+// 创建线程，线程入口为 TmThreadCreatePacketHandler 中注册的 TmThreadsSlotPktAcqLoop
 TmEcode TmThreadSpawn(ThreadVars *tv)
 {
     pthread_attr_t attr;
