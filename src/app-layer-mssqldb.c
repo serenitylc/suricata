@@ -48,11 +48,11 @@
 
 /* The default port to probe for echo traffic if not provided in the
  * configuration file. */
-#define MSSQLDB_DEFAULT_PORT "7"
+#define MSSQLDB_DEFAULT_PORT "1433"
 
 /* The minimum size for a message. For some protocols this might
  * be the size of a header. */
-#define MSSQLDB_MIN_FRAME_LEN 1
+#define MSSQLDB_MIN_FRAME_LEN 8
 
 /* Enum of app-layer events for the protocol. Normally you might
  * have events for errors in parsing data, like unexpected data being
