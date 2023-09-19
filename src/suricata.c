@@ -379,7 +379,7 @@ static void SignalHandlerSigHup(/*@unused@*/ int sig)
 
 void GlobalsInitPreConfig(void)
 {
-    // 初始化时间。包括：获取当前时间所用的spin lock，以及设置时区（调用tzset()）
+    // 初始化时间。包括：获取当前时间所用的spin lock，以及调用tzset()设置时区
     TimeInit();
     // 为快速模式匹配注册关键字。调用SupportFastPatternForSigMatchList函数，按照优先级大小插入到sm_fp_support_smlist_list链表
     SupportFastPatternForSigMatchTypes();
