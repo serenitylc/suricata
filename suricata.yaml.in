@@ -785,6 +785,8 @@ app-layer:
   protocols:
     mssqldb:
       enabled: yes
+      detection-ports:
+        dp: 1433
     telnet:
       enabled: yes
     rfb:
