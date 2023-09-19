@@ -52,6 +52,7 @@ noinst_HEADERS = \
 	app-layer-snmp.h \
 	app-layer-ssh.h \
 	app-layer-ssl.h \
+	app-layer-mssqldb.h \
 	app-layer-template.h \
 	app-layer-template-rust.h \
 	app-layer-tftp.h \
@@ -652,6 +653,7 @@ libsuricata_c_a_SOURCES = \
 	app-layer-snmp.c \
 	app-layer-ssh.c \
 	app-layer-ssl.c \
+	app-layer-mssqldb.c \
 	app-layer-template.c \
 	app-layer-template-rust.c \
 	app-layer-tftp.c \
